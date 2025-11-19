@@ -92,9 +92,11 @@ def get_products():
             # Check if the image_url is valid and if the file actually exists on disk.
             # This prevents the frontend from trying to load a broken image link.
             if image_url:
-                # image_url is stored as '/static/product_images/filename.jpg'
-                # We need to check for the file at 'static/product_images/filename.jpg'
-                filepath = image_url.lstrip('/')
+                # image_url is stored as '/static/product_images/filename.jpg'.
+                # To ensure the path is correct regardless of the working directory,
+                # we join the app's root path with the relative image path.
+                relative_path = image_url.lstrip('/')
+                filepath = os.path.join(app.root_path, relative_path)
                 if not os.path.exists(filepath):
                     image_url = None # Set to None to trigger the placeholder image
 
