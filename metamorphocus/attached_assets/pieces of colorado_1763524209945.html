@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pieces of Colorado</title>
+    
+    <!-- Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Playfair Display (Headings) & Inter (Body) --><link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons --><script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        stone: {
+                            900: '#0f1115', // Main background - Slate/Black mix
+                            800: '#1a1d23', // Card background
+                            700: '#272b33', // Borders
+                            300: '#a8aeb8', // Muted text
+                            100: '#e2e8f0', // Primary text
+                        },
+                        gold: {
+                            400: '#d4af37', // Accent gold
+                            500: '#b5952f',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f1115; /* tailwind stone-900 */
+            color: #e2e8f0;
+        }
+        
+        /* Hide scrollbar for clean look but allow scrolling */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Frosted glass effect for the cart */
+        .glass-panel {
+            background: rgba(26, 29, 35, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Smooth fade in for toast notifications */
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .toast-enter {
+            animation: slideUp 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col relative">
+
+    <!-- Toast Notification Container --><div id="toast-container" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none w-full max-w-xs text-center"></div>
+
+    <!-- Main Content Area --><main class="flex-grow px-6 pb-32 pt-16 max-w-3xl mx-auto w-full">
+        
+        <!-- Header / Logo Area (Centered, no bar) --><header class="text-center mb-12 space-y-4 animate-fade-in">
+            <div class="inline-flex items-center justify-center p-4 rounded-full border border-stone-700/50 bg-stone-800/30 mb-2 shadow-xl shadow-black/20">
+                <i data-lucide="mountain" class="w-8 h-8 text-stone-100"></i>
+            </div>
+            <h1 class="text-4xl md:text-6xl font-serif italic text-stone-100 tracking-tight">
+                Pieces of <span class="text-stone-300">Colorado</span>
+            </h1>
+            <p class="text-stone-400 text-sm tracking-[0.2em] uppercase mt-2">Handcrafted from the Rockies</p>
+        </header>
+
+        <!-- Carousel Section --><section id="hero-carousel" class="relative w-full aspect-[16/9] md:aspect-[21/9] bg-stone-800 rounded-2xl overflow-hidden shadow-2xl mb-16 border border-stone-700/30 group">
+            <!-- Slides Container --><div id="carousel-slides" class="w-full h-full relative">
+                <!-- Slides injected by JS --></div>
+            
+            <!-- Overlay Gradient for Text Readability --><div class="absolute inset-0 bg-gradient-to-t from-stone-900 via-stone-900/50 to-transparent pointer-events-none"></div>
+
+            <!-- Text Overlay --><div class="absolute bottom-0 left-0 w-full p-6 md:p-10 z-10 pointer-events-none flex flex-col justify-end h-1/2">
+                <p id="carousel-subtitle" class="text-gold-300 text-xs uppercase tracking-widest mb-2 transition-all duration-500 transform translate-y-0 opacity-100">Featured</p>
+                <h2 id="carousel-title" class="font-serif text-3xl md:text-5xl text-stone-100 italic mb-3 transition-all duration-500 transform translate-y-0 opacity-100 leading-tight">Loading...</h2>
+                <p id="carousel-desc" class="text-stone-200 text-sm md:text-lg max-w-xl transition-all duration-500 delay-75 transform translate-y-0 opacity-100 font-light leading-relaxed">...</p>
+                
+                <!-- Optional CTA Button Placeholder (Hidden by default, toggled by JS if needed) --><div id="carousel-cta" class="mt-6 opacity-0 transition-opacity duration-500">
+                    <button class="bg-stone-100 text-stone-900 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-white">Shop Now</button>
+                </div>
+            </div>
+
+            <!-- Controls --><button onclick="prevSlide()" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 backdrop-blur text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-white/10 z-20">
+                <i data-lucide="chevron-left" class="w-6 h-6"></i>
+            </button>
+            <button onclick="nextSlide()" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 backdrop-blur text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-white/10 z-20">
+                <i data-lucide="chevron-right" class="w-6 h-6"></i>
+            </button>
+
+            <!-- Indicators --><div id="carousel-indicators" class="absolute bottom-6 right-6 flex gap-2 z-20">
+                <!-- Dots injected by JS --></div>
+        </section>
+
+        <!-- Short About Section --><section class="mb-24 text-center max-w-xl mx-auto">
+            <div class="h-px w-12 bg-gold-400 mx-auto mb-8 opacity-70"></div>
+            <p class="text-stone-300 leading-loose text-lg font-light">
+                We roam the riverbeds and trails of Colorado to find stones with a story. 
+                Every piece of jewelry is cut, polished, and set by hand in our studio. 
+                No two pieces are alike, just as no two mountains are the same.
+            </p>
+        </section>
+
+        <!-- Inventory Grid --><section id="inventory-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-12">
+            <!-- Products will be injected here by JS --></section>
+
+        <!-- Simple Footer --><footer class="mt-24 text-center text-stone-700 text-xs pb-8">
+            <p>&copy; 2025 Pieces of Colorado. All rights reserved.</p>
+        </footer>
+
+    </main>
+
+    <!-- Floating Cart Button (FAB) --><button onclick="toggleCart()" class="fixed bottom-8 right-8 z-40 bg-stone-100 text-stone-900 p-4 rounded-full shadow-2xl shadow-black hover:scale-105 transition-transform duration-200 flex items-center justify-center group ring-4 ring-black/20">
+        <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+        <!-- Badge --><span id="cart-count" class="absolute -top-1 -left-1 bg-gold-400 text-stone-900 text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center opacity-0 transition-opacity duration-200 border-2 border-stone-900">0</span>
+    </button>
+
+    <!-- Cart Slide-over / Modal --><div id="cart-modal" class="fixed inset-0 z-50 translate-y-full transition-transform duration-500 cubic-bezier(0.32, 0.72, 0, 1)">
+        <!-- Backdrop (Click to close) --><div class="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer" onclick="toggleCart()"></div>
+        
+        <!-- Cart Content Panel --><div class="absolute bottom-0 left-0 right-0 glass-panel rounded-t-[2rem] h-[85vh] flex flex-col shadow-2xl ring-1 ring-white/10 max-w-3xl mx-auto">
+            
+            <!-- Handle for visual drag indication --><div class="w-full flex justify-center pt-6 pb-2 cursor-pointer" onclick="toggleCart()">
+                <div class="w-16 h-1.5 bg-stone-600/50 rounded-full hover:bg-stone-500 transition-colors"></div>
+            </div>
+
+            <div class="px-8 py-4 flex justify-between items-center border-b border-stone-700/30">
+                <h2 class="font-serif text-3xl text-stone-100 italic">Your Collection</h2>
+                <button onclick="toggleCart()" class="text-stone-400 hover:text-white transition-colors p-2">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Cart Items List --><div id="cart-items" class="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
+                <!-- Cart items injected here --><div class="h-full flex flex-col items-center justify-center text-stone-500">
+                    <i data-lucide="shopping-bag" class="w-16 h-16 mb-4 opacity-20 stroke-1"></i>
+                    <p class="text-lg font-light">Your pouch is empty.</p>
+                </div>
+            </div>
+
+            <!-- Cart Footer / Checkout --><div class="p-8 border-t border-stone-700/30 bg-stone-900/80">
+                <div class="flex justify-between items-end mb-6 font-serif">
+                    <span class="text-stone-400 text-sm uppercase tracking-widest">Total</span>
+                    <span id="cart-total" class="text-3xl text-gold-400">$0.00</span>
+                </div>
+                <button onclick="checkout()" class="w-full bg-stone-100 hover:bg-white text-stone-900 font-semibold text-lg py-5 rounded-2xl transition-all shadow-lg hover:shadow-stone-100/10 flex items-center justify-center gap-3 active:scale-[0.98]">
+                    <span>Checkout</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Data ---
+        // This is your inventory source. 
+        // Later you can replace this with a fetch() call to your database.
+        const inventory = [
+            {
+                id: 1,
+                name: "Red Rocks Pendant",
+                stone: "Sandstone",
+                price: 45.00,
+                image: "https://images.unsplash.com/photo-1599643478518-17488fbbcd75?auto=format&fit=crop&q=80&w=800",
+                desc: "Raw polished sandstone set in recycled silver wire."
+            },
+            {
+                id: 2,
+                name: "Pikes Peak Quartz",
+                stone: "Smoky Quartz",
+                price: 65.00,
+                image: "https://images.unsplash.com/photo-1615655406736-b37c4fabf923?auto=format&fit=crop&q=80&w=800",
+                desc: "Deep smoky crystal harvested near the timberline."
+            },
+            {
+                id: 3,
+                name: "Riverbed Agate Ring",
+                stone: "Colorado Agate",
+                price: 38.00,
+                image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=800",
+                desc: "Tumbled smooth by the Arkansas River, set in copper."
+            },
+            {
+                id: 4,
+                name: "Aspen Granite Studs",
+                stone: "Granite",
+                price: 28.00,
+                image: "https://images.unsplash.com/photo-1630019852942-e5e1237d6d49?auto=format&fit=crop&q=80&w=800",
+                desc: "Minimalist studs featuring the backbone of the Rockies."
+            },
+            {
+                id: 5,
+                name: "Amazonite Charm",
+                stone: "Amazonite",
+                price: 55.00,
+                image: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=80&w=800",
+                desc: "Vivid teal feldspar from the Pike's Peak batholith."
+            },
+            {
+                id: 6,
+                name: "Slate Cuff Links",
+                stone: "Black Slate",
+                price: 42.00,
+                image: "https://images.unsplash.com/photo-1617038224558-28ad3fb558a7?auto=format&fit=crop&q=80&w=800",
+                desc: "Elegant, matte finish stones for formal wear."
+            }
+        ];
+
+        // Cart State
+        let cart = [];
+        
+        // Carousel State
+        let currentSlideIndex = 0;
+        let carouselInterval;
+        
+        // Custom Carousel Content (Bios & Sale)
+        const slidesData = [
+            {
+                image: "https://images.unsplash.com/photo-1600607686527-6fb886090705?auto=format&fit=crop&q=80&w=1200", // Nature/Stones
+                subtitle: "Grand Opening Event",
+                title: "The High Country Sale",
+                desc: "To celebrate our launch, enjoy 20% off all riverbed agates and quartz pieces. Valid through Sunday."
+            },
+            {
+                image: "https://images.unsplash.com/photo-1531123414780-f74242c2b052?auto=format&fit=crop&q=80&w=1200", // Person looking at view/stones
+                subtitle: "Meet the Maker",
+                title: "Sage, The Finder",
+                desc: "Every weekend, I'm out in the canyons looking for the hidden gems that others walk right past. My hands touch every stone before it reaches you."
+            },
+            {
+                image: "https://images.unsplash.com/photo-1589156229687-496a31ad1d1f?auto=format&fit=crop&q=80&w=1200", // Hands working/Craft
+                subtitle: "Behind the Scenes",
+                title: "Crafted by Hand",
+                desc: "We believe in keeping the rough edges. Our jewelry honors the raw, jagged beauty of the Colorado landscape."
+            }
+        ];
+
+        // --- Functions ---
+
+        function formatCurrency(num) {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+        }
+
+        // Initial Render
+        function init() {
+            const grid = document.getElementById('inventory-grid');
+            
+            // Render Inventory Grid
+            inventory.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'group flex flex-col';
+                card.innerHTML = `
+                    <div class="aspect-[4/5] overflow-hidden rounded-2xl mb-5 bg-stone-800 relative shadow-lg shadow-black/40">
+                        <img src="${item.image}" alt="${item.name}" 
+                             class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700 group-hover:scale-105" 
+                             onerror="this.src='https://via.placeholder.com/400x500/272b33/e2e8f0?text=${item.stone}'">
+                        
+                        <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs text-stone-200 tracking-wide border border-white/10">
+                            ${item.stone}
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-serif text-xl text-stone-100 group-hover:text-gold-400 transition-colors cursor-pointer" onclick="addToCart(${item.id})">${item.name}</h3>
+                        <span class="font-serif text-lg text-stone-300">${formatCurrency(item.price)}</span>
+                    </div>
+                    
+                    <p class="text-sm text-stone-500 leading-relaxed mb-4 flex-grow font-light">${item.desc}</p>
+                    
+                    <button onclick="addToCart(${item.id})" class="w-full border border-stone-700 text-stone-300 py-3 rounded-xl hover:bg-stone-100 hover:text-stone-900 hover:border-stone-100 transition-all duration-300 text-sm uppercase tracking-widest font-medium">
+                        Add to Bag
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+
+            initCarousel();
+            lucide.createIcons();
+        }
+
+        // --- Carousel Logic ---
+        function initCarousel() {
+            const slidesContainer = document.getElementById('carousel-slides');
+            const indicatorsContainer = document.getElementById('carousel-indicators');
+            
+            // Render Slides
+            slidesContainer.innerHTML = slidesData.map((item, index) => `
+                <div class="carousel-slide absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${index === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}" data-index="${index}">
+                    <img src="${item.image}" class="w-full h-full object-cover object-center opacity-70" alt="${item.title}"> <!-- Adjusted opacity here --><div class="absolute inset-0 bg-black/40"></div> <!-- Stronger dark overlay --></div>
+            `).join('');
+
+            // Render Indicators
+            indicatorsContainer.innerHTML = slidesData.map((_, index) => `
+                <button onclick="goToSlide(${index})" class="w-2 h-2 rounded-full transition-all duration-300 ${index === 0 ? 'bg-gold-400 w-6' : 'bg-white/50 hover:bg-white'}"></button>
+            `).join('');
+
+            updateCarouselText(0);
+            startCarousel();
+        }
+
+        function updateCarouselText(index) {
+            const titleEl = document.getElementById('carousel-title');
+            const subtitleEl = document.getElementById('carousel-subtitle');
+            const descEl = document.getElementById('carousel-desc');
+            
+            const item = slidesData[index];
+            
+            // Animate out
+            titleEl.classList.remove('opacity-100', 'translate-y-0');
+            titleEl.classList.add('opacity-0', 'translate-y-4');
+            
+            subtitleEl.classList.remove('opacity-100', 'translate-y-0');
+            subtitleEl.classList.add('opacity-0', 'translate-y-4');
+            
+            descEl.classList.remove('opacity-100', 'translate-y-0');
+            descEl.classList.add('opacity-0', 'translate-y-4');
+
+            setTimeout(() => {
+                // Update Content
+                titleEl.textContent = item.title;
+                subtitleEl.textContent = item.subtitle;
+                descEl.textContent = item.desc;
+
+                // Animate in
+                titleEl.classList.remove('opacity-0', 'translate-y-4');
+                titleEl.classList.add('opacity-100', 'translate-y-0');
+                
+                subtitleEl.classList.remove('opacity-0', 'translate-y-4');
+                subtitleEl.classList.add('opacity-100', 'translate-y-0');
+                
+                descEl.classList.remove('opacity-0', 'translate-y-4');
+                descEl.classList.add('opacity-100', 'translate-y-0');
+            }, 500);
+        }
+
+        function updateSlidesUI() {
+            const slides = document.querySelectorAll('.carousel-slide');
+            const indicators = document.querySelectorAll('#carousel-indicators button');
+            
+            slides.forEach((slide, index) => {
+                if (index === currentSlideIndex) {
+                    slide.classList.remove('opacity-0', 'z-0');
+                    slide.classList.add('opacity-100', 'z-10');
+                } else {
+                    slide.classList.remove('opacity-100', 'z-10');
+                    slide.classList.add('opacity-0', 'z-0');
+                }
+            });
+
+            indicators.forEach((dot, index) => {
+                if (index === currentSlideIndex) {
+                    dot.className = 'w-6 h-2 rounded-full transition-all duration-300 bg-gold-400';
+                } else {
+                    dot.className = 'w-2 h-2 rounded-full transition-all duration-300 bg-white/50 hover:bg-white';
+                }
+            });
+
+            updateCarouselText(currentSlideIndex);
+        }
+
+        function nextSlide() {
+            currentSlideIndex = (currentSlideIndex + 1) % slidesData.length;
+            updateSlidesUI();
+            resetCarouselTimer();
+        }
+
+        function prevSlide() {
+            currentSlideIndex = (currentSlideIndex - 1 + slidesData.length) % slidesData.length;
+            updateSlidesUI();
+            resetCarouselTimer();
+        }
+
+        function goToSlide(index) {
+            currentSlideIndex = index;
+            updateSlidesUI();
+            resetCarouselTimer();
+        }
+
+        function startCarousel() {
+            carouselInterval = setInterval(nextSlide, 6000); // 6 seconds
+        }
+
+        function resetCarouselTimer() {
+            clearInterval(carouselInterval);
+            startCarousel();
+        }
+
+        // Logic
+        function addToCart(id) {
+            const item = inventory.find(i => i.id === id);
+            const existing = cart.find(i => i.id === id);
+            
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ ...item, qty: 1 });
+            }
+            
+            updateCartUI();
+            showToast(`Added ${item.name}`);
+            
+            // Optional: gentle bump animation on FAB
+            const fab = document.querySelector('button.fixed');
+            fab.classList.add('scale-110');
+            setTimeout(() => fab.classList.remove('scale-110'), 200);
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(i => i.id !== id);
+            updateCartUI();
+        }
+
+        function updateQuantity(id, change) {
+            const item = cart.find(i => i.id === id);
+            if (!item) return;
+
+            item.qty += change;
+            if (item.qty <= 0) {
+                removeFromCart(id);
+            } else {
+                updateCartUI();
+            }
+        }
+
+        function updateCartUI() {
+            const cartCount = document.getElementById('cart-count');
+            const cartItemsContainer = document.getElementById('cart-items');
+            const cartTotalEl = document.getElementById('cart-total');
+            
+            // Update Badge
+            const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+            cartCount.textContent = totalQty;
+            cartCount.style.opacity = totalQty > 0 ? '1' : '0';
+
+            // Calculate Total
+            const totalValue = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            cartTotalEl.textContent = formatCurrency(totalValue);
+
+            // Render Items
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-stone-500">
+                        <i data-lucide="shopping-bag" class="w-16 h-16 mb-4 opacity-20 stroke-1"></i>
+                        <p class="text-lg font-light">Your pouch is empty.</p>
+                        <button onclick="toggleCart()" class="mt-6 text-gold-400 hover:text-gold-500 text-sm uppercase tracking-widest border-b border-gold-400/30 pb-1">Return to Shop</button>
+                    </div>
+                `;
+            } else {
+                cartItemsContainer.innerHTML = cart.map(item => `
+                    <div class="flex gap-5 items-center">
+                        <div class="w-20 h-24 bg-stone-800 rounded-lg overflow-hidden flex-shrink-0 border border-stone-700/50">
+                            <img src="${item.image}" class="w-full h-full object-cover" alt="${item.name}">
+                        </div>
+                        <div class="flex-1 min-w-0 py-1">
+                            <div class="flex justify-between items-start">
+                                <h4 class="text-stone-100 font-serif text-lg leading-tight mb-1">${item.name}</h4>
+                                <p class="text-stone-300 text-lg font-serif">${formatCurrency(item.price * item.qty)}</p>
+                            </div>
+                            <p class="text-stone-500 text-xs uppercase tracking-wider mb-3">${item.stone}</p>
+                            
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center bg-stone-800 rounded-lg border border-stone-700/50">
+                                    <button onclick="updateQuantity(${item.id}, -1)" class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-white hover:bg-stone-700 rounded-l-lg transition-colors">-</button>
+                                    <span class="text-sm font-medium w-6 text-center text-stone-200">${item.qty}</span>
+                                    <button onclick="updateQuantity(${item.id}, 1)" class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-white hover:bg-stone-700 rounded-r-lg transition-colors">+</button>
+                                </div>
+                                <button onclick="removeFromCart(${item.id})" class="text-xs text-stone-500 hover:text-red-400 underline decoration-stone-700 underline-offset-2">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            lucide.createIcons();
+        }
+
+        function toggleCart() {
+            const modal = document.getElementById('cart-modal');
+            // Toggle translate class
+            if (modal.classList.contains('translate-y-full')) {
+                modal.classList.remove('translate-y-full');
+                modal.classList.add('translate-y-0');
+                document.body.style.overflow = 'hidden'; // prevent background scrolling
+            } else {
+                modal.classList.add('translate-y-full');
+                modal.classList.remove('translate-y-0');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast-enter inline-flex items-center justify-center bg-stone-800/90 backdrop-blur text-stone-100 px-6 py-3 rounded-full shadow-2xl border border-stone-700/50 text-sm font-medium gap-3 mb-3';
+            toast.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-gold-400"></i> ${message}`;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(0, 20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        function checkout() {
+            if (cart.length === 0) return;
+            
+            // Mock checkout process
+            const btn = document.querySelector('#cart-modal button[onclick="checkout()"]');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = `<i data-lucide="loader" class="animate-spin w-5 h-5"></i> Processing...`;
+            btn.disabled = true;
+            btn.classList.add('opacity-75');
+
+            setTimeout(() => {
+                cart = [];
+                updateCartUI();
+                toggleCart();
+                showToast("Order placed successfully!");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-75');
+                
+                // Scroll to top smoothly
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 1500);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
