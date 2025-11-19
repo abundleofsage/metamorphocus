@@ -43,7 +43,8 @@ def login():
     """Manager login page"""
     if request.method == 'POST':
         password = request.form.get('password')
-        manager_password = os.getenv('MANAGER_PASSWORD')
+        # Use "admin" as the default password if the environment variable is not set.
+        manager_password = os.getenv('MANAGER_PASSWORD', 'admin')
         
         if password == manager_password:
             user = User('manager')
