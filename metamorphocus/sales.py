@@ -1,10 +1,18 @@
 import os
 import requests
+import urllib.parse
 from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for, session
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from database import get_db, init_db, Inventory, Order, OrderItem
 from datetime import datetime
+
+def create_svg_placeholder(text):
+    """Generates an SVG data URI placeholder image."""
+    # Basic XML escaping for the text
+    escaped_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    svg = f'<svg width="400" height="500" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"><rect width="100%" height="100%" fill="#272b33"></rect><text x="50%" y="50%" fill="#e2e8f0" dy=".3em" font-family="Arial, sans-serif" font-size="24" text-anchor="middle">{escaped_text}</text></svg>'
+    return f"data:image/svg+xml,{urllib.parse.quote(svg)}"
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SESSION_SECRET', 'dev-secret-key-change-in-production')
@@ -105,7 +113,7 @@ def get_products():
                 'name': p.product_name,
                 'category': p.category,
                 'price': p.unit_price,
-                'image': image_url or f'https://via.placeholder.com/400x500/272b33/e2e8f0?text={p.category}',
+                'image': image_url or create_svg_placeholder(p.category),
                 'desc': p.description or f'{p.product_name} - {p.category}',
                 'stock': p.stock_level
             })
