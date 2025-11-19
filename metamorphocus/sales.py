@@ -104,6 +104,7 @@ def get_products():
                 # To ensure the path is correct regardless of the working directory,
                 # we join the app's root path with the relative image path.
                 relative_path = image_url.lstrip('/')
+                # we join the app's root path with the relative image path.
                 filepath = os.path.join(app.root_path, relative_path)
                 if not os.path.exists(filepath):
                     image_url = None # Set to None to trigger the placeholder image
