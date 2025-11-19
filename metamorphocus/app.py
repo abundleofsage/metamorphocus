@@ -741,7 +741,7 @@ elif page == "📦 Inventory":
                     image_url = None
                     if uploaded_file is not None:
                         # Create product_images directory if it doesn't exist
-                        img_dir = Path("static/product_images")
+                        img_dir = Path("metamorphocus/static/product_images")
                         img_dir.mkdir(parents=True, exist_ok=True)
                         
                         # Generate unique filename using SKU
