@@ -65,12 +65,13 @@ def logout():
 @app.route('/manager')
 @login_required
 def manager():
-    """Proxy to Streamlit manager backend"""
-    # Redirect to Streamlit on port 8000
-    # Note: This simple redirect assumes the Streamlit app is running on the same host.
-    # For production, a more robust reverse proxy setup (e.g., with Nginx) would be better.
-    streamlit_url = f"http://{request.host.split(':')[0]}:8000"
-    return render_template('manager_redirect.html', streamlit_url=streamlit_url)
+    """Redirect to the Streamlit manager backend."""
+    # This provides a direct, server-side redirect to the manager application.
+    # It reads the target port from the STREAMLIT_PORT environment variable,
+    # defaulting to 8000 if not set. This makes the port configurable.
+    streamlit_port = os.getenv('STREAMLIT_PORT', '8000')
+    streamlit_url = f"http://{request.host.split(':')[0]}:{streamlit_port}"
+    return redirect(streamlit_url)
 
 
 @app.route('/static/product_images/<path:filename>')
@@ -85,15 +86,27 @@ def get_products():
     try:
         products = db.query(Inventory).filter(Inventory.stock_level > 0).all()
         
-        products_data = [{
-            'id': p.id,
-            'name': p.product_name,
-            'category': p.category,
-            'price': p.unit_price,
-            'image': p.image_url or f'https://via.placeholder.com/400x500/272b33/e2e8f0?text={p.category}',
-            'desc': p.description or f'{p.product_name} - {p.category}',
-            'stock': p.stock_level
-        } for p in products]
+        products_data = []
+        for p in products:
+            image_url = p.image_url
+            # Check if the image_url is valid and if the file actually exists on disk.
+            # This prevents the frontend from trying to load a broken image link.
+            if image_url:
+                # image_url is stored as '/static/product_images/filename.jpg'
+                # We need to check for the file at 'static/product_images/filename.jpg'
+                filepath = image_url.lstrip('/')
+                if not os.path.exists(filepath):
+                    image_url = None # Set to None to trigger the placeholder image
+
+            products_data.append({
+                'id': p.id,
+                'name': p.product_name,
+                'category': p.category,
+                'price': p.unit_price,
+                'image': image_url or f'https://via.placeholder.com/400x500/272b33/e2e8f0?text={p.category}',
+                'desc': p.description or f'{p.product_name} - {p.category}',
+                'stock': p.stock_level
+            })
         
         return jsonify(products_data)
     finally:
