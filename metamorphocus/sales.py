@@ -3,9 +3,7 @@ import requests
 from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for, session
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from database import Inventory, Order, OrderItem, Base
+from database import get_db, init_db, Inventory, Order, OrderItem
 from datetime import datetime
 
 app = Flask(__name__)
@@ -28,29 +26,12 @@ def load_user(user_id):
         return User('manager')
     return None
 
-# Database setup
-DATABASE_URL = os.getenv('DATABASE_URL')
-engine = create_engine(
-    DATABASE_URL, 
-    echo=False,
-    pool_pre_ping=True,  # Test connections before using them
-    pool_recycle=3600,   # Recycle connections after 1 hour
-    pool_size=5,
-    max_overflow=10
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# --- Unified Database Setup ---
+# The database engine and session management are now imported from the centralized database.py.
+# This ensures the Flask app uses the same settings, including the SQLite fallback.
 
-# Initialize database tables
-Base.metadata.create_all(bind=engine)
-
-def get_db():
-    """Get a database session"""
-    db = SessionLocal()
-    try:
-        return db
-    except Exception as e:
-        db.close()
-        raise e
+# Initialize database tables on startup
+init_db()
 
 @app.route('/')
 def index():
@@ -62,7 +43,8 @@ def login():
     """Manager login page"""
     if request.method == 'POST':
         password = request.form.get('password')
-        manager_password = os.getenv('MANAGER_PASSWORD')
+        # Use "admin" as the default password if the environment variable is not set.
+        manager_password = os.getenv('MANAGER_PASSWORD', 'admin')
         
         if password == manager_password:
             user = User('manager')
@@ -83,10 +65,14 @@ def logout():
 @app.route('/manager')
 @login_required
 def manager():
-    """Proxy to Streamlit manager backend"""
-    # Redirect to Streamlit on port 8000
-    streamlit_url = request.host.replace(':5000', ':8000')
-    return render_template('manager_redirect.html', streamlit_url=f'http://{streamlit_url}')
+    """Redirect to the Streamlit manager backend."""
+    # This provides a direct, server-side redirect to the manager application.
+    # It reads the target port from the STREAMLIT_PORT environment variable,
+    # defaulting to 8000 if not set. This makes the port configurable.
+    streamlit_port = os.getenv('STREAMLIT_PORT', '8000')
+    streamlit_url = f"http://{request.host.split(':')[0]}:{streamlit_port}"
+    return redirect(streamlit_url)
+
 
 @app.route('/static/product_images/<path:filename>')
 def serve_product_image(filename):
@@ -100,15 +86,27 @@ def get_products():
     try:
         products = db.query(Inventory).filter(Inventory.stock_level > 0).all()
         
-        products_data = [{
-            'id': p.id,
-            'name': p.product_name,
-            'category': p.category,
-            'price': p.unit_price,
-            'image': p.image_url or f'https://via.placeholder.com/400x500/272b33/e2e8f0?text={p.category}',
-            'desc': p.description or f'{p.product_name} - {p.category}',
-            'stock': p.stock_level
-        } for p in products]
+        products_data = []
+        for p in products:
+            image_url = p.image_url
+            # Check if the image_url is valid and if the file actually exists on disk.
+            # This prevents the frontend from trying to load a broken image link.
+            if image_url:
+                # image_url is stored as '/static/product_images/filename.jpg'
+                # We need to check for the file at 'static/product_images/filename.jpg'
+                filepath = image_url.lstrip('/')
+                if not os.path.exists(filepath):
+                    image_url = None # Set to None to trigger the placeholder image
+
+            products_data.append({
+                'id': p.id,
+                'name': p.product_name,
+                'category': p.category,
+                'price': p.unit_price,
+                'image': image_url or f'https://via.placeholder.com/400x500/272b33/e2e8f0?text={p.category}',
+                'desc': p.description or f'{p.product_name} - {p.category}',
+                'stock': p.stock_level
+            })
         
         return jsonify(products_data)
     finally:
