@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, date
-from database import get_db_connection, get_db, Inventory, Material, Finance, Idea, BillOfMaterials, ProductionOrder, Labor, Settings, Order, OrderItem
+from database import get_db, init_db, Inventory, Material, Finance, Idea, BillOfMaterials, ProductionOrder, Labor, Settings, Order, OrderItem
 from sqlalchemy import func
 import os
 from pathlib import Path
@@ -16,8 +16,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize database
-get_db_connection()
+# Initialize database tables
+init_db()
 
 # Custom CSS for Dark Mode styling with Blue & Purple theme
 st.markdown("""
@@ -2462,6 +2462,8 @@ elif page == "🧪 Test Data":
                     db.query(Labor).delete()
                     db.query(ProductionOrder).delete()
                     db.query(BillOfMaterials).delete()
+                    db.query(OrderItem).delete() # Added OrderItem delete
+                    db.query(Order).delete()     # Added Order delete
                     # Then delete independent tables
                     db.query(Finance).delete()
                     db.query(Idea).delete()
