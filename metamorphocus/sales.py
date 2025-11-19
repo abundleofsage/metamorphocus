@@ -3,9 +3,7 @@ import requests
 from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for, session
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from database import Inventory, Order, OrderItem, Base
+from database import get_db, init_db, Inventory, Order, OrderItem
 from datetime import datetime
 
 app = Flask(__name__)
@@ -28,29 +26,12 @@ def load_user(user_id):
         return User('manager')
     return None
 
-# Database setup
-DATABASE_URL = os.getenv('DATABASE_URL')
-engine = create_engine(
-    DATABASE_URL, 
-    echo=False,
-    pool_pre_ping=True,  # Test connections before using them
-    pool_recycle=3600,   # Recycle connections after 1 hour
-    pool_size=5,
-    max_overflow=10
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# --- Unified Database Setup ---
+# The database engine and session management are now imported from the centralized database.py.
+# This ensures the Flask app uses the same settings, including the SQLite fallback.
 
-# Initialize database tables
-Base.metadata.create_all(bind=engine)
-
-def get_db():
-    """Get a database session"""
-    db = SessionLocal()
-    try:
-        return db
-    except Exception as e:
-        db.close()
-        raise e
+# Initialize database tables on startup
+init_db()
 
 @app.route('/')
 def index():
@@ -85,8 +66,11 @@ def logout():
 def manager():
     """Proxy to Streamlit manager backend"""
     # Redirect to Streamlit on port 8000
-    streamlit_url = request.host.replace(':5000', ':8000')
-    return render_template('manager_redirect.html', streamlit_url=f'http://{streamlit_url}')
+    # Note: This simple redirect assumes the Streamlit app is running on the same host.
+    # For production, a more robust reverse proxy setup (e.g., with Nginx) would be better.
+    streamlit_url = f"http://{request.host.split(':')[0]}:8000"
+    return render_template('manager_redirect.html', streamlit_url=streamlit_url)
+
 
 @app.route('/static/product_images/<path:filename>')
 def serve_product_image(filename):
